@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 import { arrayFilter } from '@/utils'
-import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
+//import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
 
 // dialogs
 import ChangeUName from './dialog/changeUName.vue'
@@ -35,13 +35,13 @@ const btns = arrayFilter([
     color: '',
     click: () => changePwdDialog.value?.openDialog()
   },
-  {
-    title: 'PassKey',
-    icon: 'fingerprint',
-    color: '',
-    click: () => bindANDialog.value?.openDialog(),
-    condition: () => browserSupportsWebAuthn()
-  },
+// {
+//    title: 'PassKey',
+//    icon: 'fingerprint',
+//    color: '',
+//    click: () => bindANDialog.value?.openDialog(),
+//    condition: () => browserSupportsWebAuthn()
+//  },
   {
     title: '登录日志',
     icon: 'script-text-key-outline',

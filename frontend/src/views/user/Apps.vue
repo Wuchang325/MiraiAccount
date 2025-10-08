@@ -5,7 +5,10 @@ import { getMyOAuth2AppsApi, delMyOAuth2AppApi } from '@/apis/oauth2'
 import oOauth2 from './dialog/oOauth2.vue'
 import { indexStore } from '@/stores'
 import { resetOAuth2SecretApi } from '@/apis/oauth2'
+import { userStore } from '@/stores/user'  // 导入用户存储
 
+// 获取用户存储实例
+const user = userStore()
 const { showMsg, openConfirmDialog } = indexStore()
 const serverItems = ref<OAuth2ClientInfo[]>([])
 const oOauth2Dialog = ref<InstanceType<typeof oOauth2>>()
@@ -37,6 +40,8 @@ const toResetSecret = async (item: OAuth2ClientInfo) => {
 }
 
 onMounted(async () => {
+  // 确保用户信息已加载
+  await user.getUserInfo()
   await getAppList()
 })
 </script>
@@ -46,14 +51,15 @@ onMounted(async () => {
     <v-progress-linear indeterminate v-if="cardLoading"></v-progress-linear>
     <v-card-title class="d-flex align-center justify-space-between">
       总计 {{ serverItems.length }} 个应用
-      <v-btn
-        class="ml-4"
-        variant="outlined"
-        color="primary"
-        prepend-icon="mdi-plus"
+      <!-- 使用userStore判断管理员权限 -->
+      <v-btn 
+        color="primary" 
+        prepend-icon="mdi-plus" 
         @click="oOauth2Dialog?.openDialog()"
-        >添加</v-btn
+        v-if="user.info?.role === 'admin'"
       >
+        新增 OAuth2 应用
+      </v-btn>
     </v-card-title>
 
     <v-card-text>
@@ -69,24 +75,14 @@ onMounted(async () => {
                 <p class="text-subtitle-1 font-weight-medium">客户端 Secret</p>
                 <CopyTool :text="item.secret">
                   <template #default="{ copy, style, act }">
-                    <span
-                      v-bind="act"
-                      @click="copy"
-                      :style="style"
-                      class="text-body-2 text-medium-emphasis"
-                      >{{ item.secret }}</span
-                    >
+                    <span v-bind="act" @click="copy" :style="style" class="text-body-2 text-medium-emphasis">{{
+                      item.secret }}</span>
                   </template>
                 </CopyTool>
                 <v-tooltip text="重置密钥" location="bottom">
                   <template v-slot:activator="{ props }">
-                    <v-icon
-                      v-bind="props"
-                      icon="mdi-lock-reset"
-                      color="warning"
-                      class="ml-2"
-                      @click="toResetSecret(item)"
-                    ></v-icon>
+                    <v-icon v-bind="props" icon="mdi-lock-reset" color="warning" class="ml-2"
+                      @click="toResetSecret(item)"></v-icon>
                   </template>
                 </v-tooltip>
               </v-col>
@@ -94,32 +90,15 @@ onMounted(async () => {
                 <p class="text-subtitle-1 font-weight-medium">回调 Url</p>
                 <CopyTool :text="item.redirect">
                   <template #default="{ copy, style, act }">
-                    <span
-                      v-bind="act"
-                      @click="copy"
-                      :style="style"
-                      class="text-body-2 text-medium-emphasis"
-                      >{{ item.redirect }}</span
-                    >
+                    <span v-bind="act" @click="copy" :style="style" class="text-body-2 text-medium-emphasis">{{
+                      item.redirect }}</span>
                   </template>
                 </CopyTool>
               </v-col>
               <v-col cols="12" sm="12" md="6">
-                <v-btn
-                  color="primary"
-                  class="mr-4"
-                  variant="outlined"
-                  prepend-icon="mdi-pencil-outline"
-                  @click="oOauth2Dialog?.openDialog(item)"
-                  >编辑</v-btn
-                >
-                <v-btn
-                  color="red"
-                  variant="tonal"
-                  prepend-icon="mdi-delete-outline"
-                  @click="toDelete(item)"
-                  >删除</v-btn
-                >
+                <v-btn color="primary" class="mr-4" variant="outlined" prepend-icon="mdi-pencil-outline"
+                  @click="oOauth2Dialog?.openDialog(item)">编辑</v-btn>
+                <v-btn color="red" variant="tonal" prepend-icon="mdi-delete-outline" @click="toDelete(item)">删除</v-btn>
               </v-col>
             </v-row>
           </v-expansion-panel-text>

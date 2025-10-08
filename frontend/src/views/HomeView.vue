@@ -20,8 +20,8 @@ const { xs } = useDisplay()
             style="transition: all 0.5s"
             class="text-primary"
             :class="xs ? 'text-h4' : 'text-h3'"
-          >
-            Nyancy Account
+          >  
+          Mirai Account
           </div>
         </v-card-title>
         <v-card-text>

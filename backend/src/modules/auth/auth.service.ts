@@ -5,22 +5,26 @@ import { timeUuid } from 'src/utils/uuid';
 import { LoginDto, PWD_REG, RegisterDto, UNAME_REG } from './auth.dto';
 import { MailCodeType, MailLinkType } from './auth.interface';
 import type { UserInfo } from 'src/modules/user/user.interface';
-import { base64ToUint8Array, emailTemplate, isEmail } from 'src/utils';
+import { 
+  //base64ToUint8Array, 
+  emailTemplate, 
+  isEmail 
+} from 'src/utils';
 import type { Request } from 'express';
-import {
-  generateAuthenticationOptions,
-  verifyAuthenticationResponse,
-} from '@simplewebauthn/server';
-import type {
-  GenerateAuthenticationOptionsOpts,
-  VerifiedAuthenticationResponse,
-  VerifyAuthenticationResponseOpts,
-} from '@simplewebauthn/server';
-import { isoBase64URL, isoUint8Array } from '@simplewebauthn/server/helpers';
-import type {
-  AuthenticatorDevice,
-  AuthenticationResponseJSON,
-} from '@simplewebauthn/types';
+//import {
+//  generateAuthenticationOptions,
+//  verifyAuthenticationResponse,
+//} from '@simplewebauthn/server';
+//import type {
+//  GenerateAuthenticationOptionsOpts,
+//  VerifiedAuthenticationResponse,
+//  VerifyAuthenticationResponseOpts,
+//} from '@simplewebauthn/server';
+//import { isoBase64URL, isoUint8Array } from '@simplewebauthn/server/helpers';
+//import type {
+//  AuthenticatorDevice,
+//  AuthenticationResponseJSON,
+//} from '@simplewebauthn/types';
 import config from 'src/services/config';
 import { City } from 'ipip-ipdb';
 import useragent from 'express-useragent';
@@ -133,8 +137,10 @@ export class AuthService {
     // 验证验证码
     await this.verifyEmailCode(session, body.email, body.code, 'reg');
 
+    const [countResult] = await db.query('SELECT COUNT(*) as count FROM user');
+    const isFirstUser = Number(countResult.count) === 0;
+
     // 开始注册
-    // 插入新用户
     let i;
     try {
       i = await db.query(
@@ -144,7 +150,7 @@ export class AuthService {
           bcrypt.hashSync(body.password, 10),
           body.email,
           0,
-          'default',
+          isFirstUser ? 'admin' : 'default', // 第一个用户设为admin
           Date.now(),
         ],
       );
@@ -179,7 +185,7 @@ export class AuthService {
   }
 
   // 生成 PASSKEY 配置项
-  async genAuthOpt(session: Record<string, any>, body: LoginDto) {
+/*  async genAuthOpt(session: Record<string, any>, body: LoginDto) {
     const u = await this.hasUser(body.username);
 
     const devices: AuthenticatorDevice[] = u.authDevice
@@ -262,7 +268,7 @@ export class AuthService {
     if (!verified) throw new Error('验证失败');
 
     return await this.loginInfo(session, req, u);
-  }
+  }*/
 
   async loginInfo(session: Record<string, any>, req: Request, u: UserInfo) {
     // 如果被封了
@@ -323,7 +329,7 @@ export class AuthService {
 
     const email = {
       to: receiver, // 发给谁？
-      subject: 'Nyancy | 邮箱验证', // 邮件标题
+      subject: 'Mirai | 邮箱验证', // 邮件标题
       html: await emailTemplate(type, verifyCode),
     };
 

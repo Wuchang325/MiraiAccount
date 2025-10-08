@@ -7,15 +7,15 @@ import {
   Put,
   Body,
   Get,
-  Delete,
-  Post,
+//  Delete,
+//  Post,
   Query,
 } from '@nestjs/common';
 import { UserService as UserServices } from './user.service';
 import { UserAdminService as UserAdminServices } from './user.admin.service';
 import { CheckAuthGuard } from 'src/guards/permission';
 import type { UpdateType } from './user.interface';
-import type { RegistrationResponseJSON } from '@simplewebauthn/types';
+//import type { RegistrationResponseJSON } from '@simplewebauthn/types';
 
 @Controller('user')
 @UseGuards(CheckAuthGuard)
@@ -44,31 +44,31 @@ export class UserController {
   }
 
   // 生成 WebAuthn 配置项
-  @Get('registrationOptions')
-  @HttpCode(200)
-  genRegOpt(@Session() session: Record<string, any>) {
-    return this.UserService.genRegOpt(session);
-  }
+  //@Get('registrationOptions')
+  //@HttpCode(200)
+  //genRegOpt(@Session() session: Record<string, any>) {
+  //  return this.UserService.genRegOpt(session);
+  //}
 
   // 验证 WebAuthn 配置项
-  @Post('verifyRegistration')
-  @HttpCode(200)
-  vRegOpt(
-    @Session() session: Record<string, any>,
-    @Body() body: RegistrationResponseJSON,
-  ) {
-    return this.UserService.vRegOpt(session, body);
-  }
+  //@Post('verifyRegistration')
+  //@HttpCode(200)
+  //vRegOpt(
+  //  @Session() session: Record<string, any>,
+  //  @Body() body: RegistrationResponseJSON,
+  //) {
+  //  return this.UserService.vRegOpt(session, body);
+  //}
 
   // 删除 WebAuthn
-  @Delete('deleteRegistration')
-  @HttpCode(200)
-  delete_wan(
-    @Session() session: Record<string, any>,
-    @Body() body: { credentialID: string },
-  ) {
-    return this.UserService.delete_wan(session, false, body);
-  }
+  //@Delete('deleteRegistration')
+  //@HttpCode(200)
+  //delete_wan(
+  //  @Session() session: Record<string, any>,
+  //  @Body() body: { credentialID: string },
+  //) {
+  //  return this.UserService.delete_wan(session, false, body);
+  //}
 
   // 登录日志
   @Get('loginLogs')

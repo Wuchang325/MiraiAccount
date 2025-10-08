@@ -10,16 +10,11 @@ import 'vuetify/styles'
 
 // Composables
 import { createVuetify } from 'vuetify'
-import { VSpeedDial } from 'vuetify/labs/VSpeedDial'
-import { VSparkline } from 'vuetify/labs/VSparkline'
+// import { VSpeedDial } from 'vuetify/labs/VSpeedDial'
 
 // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
 export default createVuetify({
   components: {
-    VSpeedDial,
-    VSparkline
-  },
-  defaults: {
     VCard: {
       variant: 'text'
     },

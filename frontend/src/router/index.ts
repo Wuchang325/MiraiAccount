@@ -261,7 +261,7 @@ router.beforeEach((to, from, next) => {
     })
   }
 
-  document.title = (to.meta.title || '首页') + ' - Nyancy Account'
+  document.title = (to.meta.title || '首页') + ' - Mirai Account'
 
   next()
 })

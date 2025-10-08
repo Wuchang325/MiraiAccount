@@ -7,8 +7,8 @@ import { VForm } from 'vuetify/lib/components/index.mjs'
 import { loginApi, getWebAuthnAuthOptionApi, verifyWebAuthnApi } from '@/apis/auth'
 import { userStore } from '@/stores/user'
 import router from '@/router'
-import type { AuthenticationResponseJSON } from '@simplewebauthn/types'
-import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser'
+//import type { AuthenticationResponseJSON } from '@simplewebauthn/types'
+//import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser'
 import { useDisplay } from 'vuetify'
 import { useRouteQuery } from '@vueuse/router'
 
@@ -24,7 +24,7 @@ const formData = ref<LoginForm>({
 
 const step = ref(1)
 const btnLoading = ref(false)
-const wBtnLoading = ref(false)
+//const wBtnLoading = ref(false)
 
 const nextStep = () => formData.value.username && step.value++
 
@@ -46,6 +46,8 @@ const login = async () => {
   }
 }
 
+// 注释PassKey登录相关函数但保留代码
+/*
 const getAuthOption = async () => {
   if (!form.value) return
   const { valid } = await form.value.validate()
@@ -80,6 +82,7 @@ const getAuthOption = async () => {
     return (window.location.href = decodeURIComponent(redirectUrl.value as string))
   router.replace('/user/info')
 }
+*/
 </script>
 
 <template>
@@ -117,6 +120,7 @@ const getAuthOption = async () => {
               >忘记密码</v-btn
             >
           </v-col>
+          <!--
           <v-col v-if="browserSupportsWebAuthn()" cols="12" sm="6">
             <v-btn
               size="large"
@@ -128,6 +132,7 @@ const getAuthOption = async () => {
               >使用PassKey</v-btn
             >
           </v-col>
+          -->
         </v-row>
       </v-col>
       <v-col cols="12" sm="5">

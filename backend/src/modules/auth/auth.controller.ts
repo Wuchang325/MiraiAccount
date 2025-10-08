@@ -4,7 +4,7 @@ import { MailerService as MailerServices } from 'src/services/mailer';
 import { RateLimit } from 'nestjs-rate-limiter';
 // import type { RegForm } from './auth.interface';
 import type { Request } from 'express';
-import type { AuthenticationResponseJSON } from '@simplewebauthn/types';
+//import type { AuthenticationResponseJSON } from '@simplewebauthn/types';
 import { LoginDto, RegisterDto } from './auth.dto';
 
 @Controller('auth')
@@ -118,20 +118,20 @@ export class AuthController {
   }
 
   // 生成 WebAuthn 配置项
-  @Post('registrationOptions')
-  @HttpCode(200)
-  genAuthOpt(@Session() session: Record<string, any>, @Body() body: LoginDto) {
-    return this.AuthService.genAuthOpt(session, body);
-  }
+  //@Post('registrationOptions')
+  //@HttpCode(200)
+  //genAuthOpt(@Session() session: Record<string, any>, @Body() body: LoginDto) {
+  //  return this.AuthService.genAuthOpt(session, body);
+  //}
 
   // 验证 WebAuthn 配置项
-  @Post('verifyRegistration')
-  @HttpCode(200)
-  vRegOpt(
-    @Session() session: Record<string, any>,
-    @Req() req: Request,
-    @Body() body: AuthenticationResponseJSON,
-  ) {
-    return this.AuthService.vRegOpt(session, req, body);
-  }
+  //@Post('verifyRegistration')
+  //@HttpCode(200)
+  //vRegOpt(
+  //  @Session() session: Record<string, any>,
+  //  @Req() req: Request,
+  //  @Body() body: AuthenticationResponseJSON,
+  //) {
+  //  return this.AuthService.vRegOpt(session, req, body);
+  //}
 }
