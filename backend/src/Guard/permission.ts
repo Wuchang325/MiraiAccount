@@ -1,6 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { db } from '../services/mysql';
+import { db } from '../Service/mysql';
 
 @Injectable()
 export class CheckAuthGuard

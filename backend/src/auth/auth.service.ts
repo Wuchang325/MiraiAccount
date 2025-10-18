@@ -1,42 +1,41 @@
-import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
-import { db } from 'src/services/mysql';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { db } from 'src/Service/mysql';
 import bcrypt from 'bcryptjs';
-import { timeUuid } from 'src/utils/uuid';
-import { LoginDto, PWD_REG, RegisterDto, UNAME_REG } from './auth.dto';
+import { timeUuid } from 'src/Utils/uuid';
+import { logger } from 'src/Utils/log';
+import type { LoginForm, RegForm } from './auth.interface';
 import { MailCodeType, MailLinkType } from './auth.interface';
-import type { UserInfo } from 'src/modules/user/user.interface';
-import { 
-  //base64ToUint8Array, 
-  emailTemplate, 
-  isEmail 
-} from 'src/utils';
+import type { UserInfo } from 'src/user/user.interface';
+import { base64ToUint8Array, emailTemplate, isEmail } from 'src/Utils';
 import type { Request } from 'express';
-//import {
-//  generateAuthenticationOptions,
-//  verifyAuthenticationResponse,
-//} from '@simplewebauthn/server';
-//import type {
-//  GenerateAuthenticationOptionsOpts,
-//  VerifiedAuthenticationResponse,
-//  VerifyAuthenticationResponseOpts,
-//} from '@simplewebauthn/server';
-//import { isoBase64URL, isoUint8Array } from '@simplewebauthn/server/helpers';
-//import type {
-//  AuthenticatorDevice,
-//  AuthenticationResponseJSON,
-//} from '@simplewebauthn/types';
-import config from 'src/services/config';
+import {
+  generateAuthenticationOptions,
+  verifyAuthenticationResponse,
+} from '@simplewebauthn/server';
+import type {
+  GenerateAuthenticationOptionsOpts,
+  VerifiedAuthenticationResponse,
+  VerifyAuthenticationResponseOpts,
+} from '@simplewebauthn/server';
+import { isoBase64URL, isoUint8Array } from '@simplewebauthn/server/helpers';
+import type {
+  AuthenticatorDevice,
+  AuthenticationResponseJSON,
+} from '@simplewebauthn/types';
+import config from 'src/Service/config';
 import { City } from 'ipip-ipdb';
 import useragent from 'express-useragent';
 
 @Injectable()
 export class AuthService {
   // 登录
-  async login(session: Record<string, any>, req: Request, body: LoginDto) {
-    const a = this.loginValidateData(body);
+  async login(session: Record<string, any>, req: Request, body: LoginForm) {
+    const a = await this.loginValidateData(body);
     if (!a.status) {
       throw new HttpException(
-        '用户名或密码不符合规范',
+        {
+          msg: '用户名或密码不符合规范',
+        },
         HttpStatus.EXPECTATION_FAILED,
       );
     }
@@ -54,7 +53,9 @@ export class AuthService {
     // 如果没有找到这个用户或者用户名密码错误
     if (r === undefined || !bcrypt.compareSync(body.password, r.password))
       throw new HttpException(
-        '用户名或密码错误',
+        {
+          msg: '用户名或密码错误',
+        },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
 
@@ -77,7 +78,9 @@ export class AuthService {
 
     // 邮箱可用
     return {
+      code: HttpStatus.OK,
       msg: '恭喜，该邮箱可用~',
+      time: Date.now(),
     };
   }
 
@@ -90,7 +93,9 @@ export class AuthService {
     if (r != undefined) throw new Error('该用户名已被占用！');
 
     return {
+      code: HttpStatus.OK,
       msg: '恭喜，该用户名可用~',
+      time: Date.now(),
     };
   }
 
@@ -115,7 +120,7 @@ export class AuthService {
   }
 
   // 注册
-  async register(session: Record<string, any>, body: RegisterDto) {
+  async register(session: Record<string, any>, body: RegForm) {
     // 检查是否允许注册
     await this.allowReg();
 
@@ -123,7 +128,9 @@ export class AuthService {
     const a = await this.regValidateData(body);
     if (!a) {
       throw new HttpException(
-        '用户名或密码不符合规范',
+        {
+          msg: '用户名或密码不符合规范',
+        },
         HttpStatus.EXPECTATION_FAILED,
       );
     }
@@ -137,10 +144,8 @@ export class AuthService {
     // 验证验证码
     await this.verifyEmailCode(session, body.email, body.code, 'reg');
 
-    const [countResult] = await db.query('SELECT COUNT(*) as count FROM user');
-    const isFirstUser = Number(countResult.count) === 0;
-
     // 开始注册
+    // 插入新用户
     let i;
     try {
       i = await db.query(
@@ -150,12 +155,12 @@ export class AuthService {
           bcrypt.hashSync(body.password, 10),
           body.email,
           0,
-          isFirstUser ? 'admin' : 'default', // 第一个用户设为admin
+          'default',
           Date.now(),
         ],
       );
     } catch (err) {
-      Logger.error(err.message);
+      logger.error(err.message);
       throw new Error('注册失败，请联系网站管理员');
     }
 
@@ -168,7 +173,9 @@ export class AuthService {
       );
 
       return {
+        code: HttpStatus.OK,
         msg: '好耶，你注册成功了~',
+        time: Date.now(),
       };
     } else {
       throw new Error('注册失败，请联系网站管理员');
@@ -177,15 +184,17 @@ export class AuthService {
 
   // 登出
   async logout(session: Record<string, any>) {
-    if (!session.login) throw new Error('登出失败，你是不是没登录？');
+    if (!session.login) throw new Error('登出失败，你tm是不是没登录？');
     session.destroy();
     return {
+      code: HttpStatus.OK,
       msg: '登出成功',
+      time: Date.now(),
     };
   }
 
-  // 生成 PASSKEY 配置项
-/*  async genAuthOpt(session: Record<string, any>, body: LoginDto) {
+  // 生成 外部验证器 配置项
+  async genAuthOpt(session: Record<string, any>, body: LoginForm) {
     const u = await this.hasUser(body.username);
 
     const devices: AuthenticatorDevice[] = u.authDevice
@@ -208,12 +217,14 @@ export class AuthService {
     session['_uname'] = u.username;
 
     return {
+      code: HttpStatus.OK,
       msg: '获取成功',
+      time: Date.now(),
       data: options,
     };
   }
 
-  // 验证PASSKEY
+  // 验证外部验证器
   async vRegOpt(
     session: Record<string, any>,
     req: Request,
@@ -268,7 +279,7 @@ export class AuthService {
     if (!verified) throw new Error('验证失败');
 
     return await this.loginInfo(session, req, u);
-  }*/
+  }
 
   async loginInfo(session: Record<string, any>, req: Request, u: UserInfo) {
     // 如果被封了
@@ -293,7 +304,9 @@ export class AuthService {
     session['email'] = u.email;
 
     return {
+      code: HttpStatus.OK,
       msg: '登录成功',
+      time: Date.now(),
       data: {
         ...u,
         lastLoginIp: ip,
@@ -313,7 +326,7 @@ export class AuthService {
       throw new Error('未知的验证码类型');
 
     if (type !== 'reg') {
-      if (session && !session.login) throw new Error('你是不是没登录？');
+      if (session && !session.login) throw new Error('你tm是不是没登录？');
     }
 
     // 验证邮箱格式
@@ -356,7 +369,9 @@ export class AuthService {
     }
     session[type] = null;
     return {
+      code: HttpStatus.OK,
       msg: '验证码验证成功！',
+      time: Date.now(),
     };
   }
 
@@ -387,7 +402,7 @@ export class AuthService {
 
     const email = {
       to: receiver,
-      subject: 'Nyancy | 邮箱验证',
+      subject: 'Mirai | 邮箱验证',
       html: await emailTemplate(type, t_uuid),
     };
     return email;
@@ -419,22 +434,26 @@ export class AuthService {
     await db.query('update user set verifyToken=? where id=?', [null, dc.id]);
 
     return {
+      code: HttpStatus.OK,
       msg: '邮箱验证成功！',
+      time: Date.now(),
     };
   }
 
   // 重置密码
-  async resetPasswd(
-    body: Pick<RegisterDto, 'password'> & Pick<RegisterDto, 'code'>,
-  ) {
-    // // 先验证密码是否合法
-    // const a = PWD_REG.test(body.password);
-    // if (!a) {
-    //   throw new HttpException(
-    //     '新密码不符合规范！',
-    //     HttpStatus.EXPECTATION_FAILED,
-    //   );
-    // }
+  async resetPasswd(body: Pick<RegForm, 'password'> & Pick<RegForm, 'code'>) {
+    // 先验证密码是否合法
+    const a = /^[a-zA-Z0-9!@#$%^&*()_+\-=[\]{}|\\:;"'<>,.?/~`]{6,20}$/.test(
+      body.password,
+    );
+    if (!a) {
+      throw new HttpException(
+        {
+          msg: '新密码不符合规范！',
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      );
+    }
 
     // 获取被重置密码的邮箱
     const [dc]: { email: string }[] = await db.query(
@@ -457,40 +476,73 @@ export class AuthService {
       throw new Error('发生了未知错误，请联系网站管理员');
 
     return {
+      code: HttpStatus.OK,
       msg: '密码重置成功',
+      time: Date.now(),
     };
   }
 
   // 登录表单验证，顺便判断是用户名还是邮箱登录
-  loginValidateData(body: LoginDto): { status: boolean; type: string } {
+  async loginValidateData(body: LoginForm) {
     const uname = body.username;
     const passwd = body.password;
-    const IS_EMAIL_REG = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (IS_EMAIL_REG.test(uname)) {
+    if (!uname || !passwd)
+      throw new HttpException(
+        {
+          msg: '请填写表单完整',
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      );
+
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(uname)) {
       return {
-        status: IS_EMAIL_REG.test(uname) && PWD_REG.test(passwd),
+        status:
+          /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(uname) &&
+          /^[a-zA-Z0-9!@#$%^&*()_+\-=[\]{}|\\:;"'<>,.?/~`]{6,20}$/.test(passwd),
         type: 'email',
       };
     } else {
       return {
-        status: UNAME_REG.test(uname) && PWD_REG.test(passwd),
+        status:
+          /^[a-zA-Z0-9_-]{4,16}$/.test(uname) &&
+          /^[a-zA-Z0-9!@#$%^&*()_+\-=[\]{}|\\:;"'<>,.?/~`]{6,20}$/.test(passwd),
         type: 'default',
       };
     }
   }
 
   // 注册表单验证
-  async regValidateData(body: RegisterDto) {
+  async regValidateData(body: RegForm) {
     const uname = body.username;
     const passwd = body.password;
+    const email = body.email;
+    const code = body.code;
+
+    if (!uname || !passwd || !email || !code)
+      throw new HttpException(
+        {
+          msg: '请填写表单完整',
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      );
 
     // 判断禁止的用户名
-    // TODO: 加一个禁止的表
     if (uname === 'admin')
-      throw new HttpException('禁止该用户名', HttpStatus.EXPECTATION_FAILED);
+      throw new HttpException(
+        {
+          msg: '禁止该用户名',
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      );
 
-    return UNAME_REG.test(uname) && PWD_REG.test(passwd);
+    // 邮箱格式不正确
+    isEmail(email);
+
+    return (
+      /^[a-zA-Z0-9_-]{4,16}$/.test(uname) &&
+      /^[a-zA-Z0-9!@#$%^&*()_+\-=[\]{}|\\:;"'<>,.?/~`]{6,20}$/.test(passwd)
+    );
   }
 
   // 是否允许注册
@@ -500,7 +552,9 @@ export class AuthService {
     );
     if (a[0].value === 'false') {
       throw new HttpException(
-        '本站已关闭用户注册功能！',
+        {
+          msg: '本站已关闭用户注册功能！',
+        },
         HttpStatus.SERVICE_UNAVAILABLE,
       );
     } else {

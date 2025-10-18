@@ -1,11 +1,18 @@
-import { Controller, HttpCode, Session, Post, Body, Req } from '@nestjs/common';
+import {
+  Controller,
+  HttpCode,
+  Session,
+  Post,
+  Body,
+  HttpStatus,
+  Req,
+} from '@nestjs/common';
 import { AuthService as AuthServices } from './auth.service';
-import { MailerService as MailerServices } from 'src/services/mailer';
+import { MailerService as MailerServices } from 'src/Service/mailer';
 import { RateLimit } from 'nestjs-rate-limiter';
-// import type { RegForm } from './auth.interface';
+import type { LoginForm, RegForm } from './auth.interface';
 import type { Request } from 'express';
-//import type { AuthenticationResponseJSON } from '@simplewebauthn/types';
-import { LoginDto, RegisterDto } from './auth.dto';
+import type { AuthenticationResponseJSON } from '@simplewebauthn/types';
 
 @Controller('auth')
 export class AuthController {
@@ -18,7 +25,7 @@ export class AuthController {
   @HttpCode(200)
   login(
     @Session() session: Record<string, any>,
-    @Body() body: LoginDto,
+    @Body() body: LoginForm,
     @Req() req: Request,
   ) {
     return this.AuthService.login(session, req, body);
@@ -26,7 +33,7 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(200)
-  register(@Session() session: Record<string, any>, @Body() body: RegisterDto) {
+  register(@Session() session: Record<string, any>, @Body() body: RegForm) {
     return this.AuthService.register(session, body);
   }
 
@@ -77,7 +84,9 @@ export class AuthController {
     }
 
     return {
+      code: HttpStatus.OK,
       msg: '邮件发送成功',
+      time: Date.now(),
     };
   }
 
@@ -103,35 +112,35 @@ export class AuthController {
     }
 
     return {
+      code: HttpStatus.OK,
       msg: '邮件发送成功',
+      time: Date.now(),
     };
   }
 
   // 重置密码
   @Post('reset')
   @HttpCode(200)
-  verifyEmail(
-    @Body() body: Pick<RegisterDto, 'password'> & Pick<RegisterDto, 'code'>,
-  ) {
+  verifyEmail(@Body() body: RegForm) {
     if (!body.code || body.code === 'undefined') throw new Error(':(');
     return this.AuthService.resetPasswd(body);
   }
 
   // 生成 WebAuthn 配置项
-  //@Post('registrationOptions')
-  //@HttpCode(200)
-  //genAuthOpt(@Session() session: Record<string, any>, @Body() body: LoginDto) {
-  //  return this.AuthService.genAuthOpt(session, body);
-  //}
+  @Post('registrationOptions')
+  @HttpCode(200)
+  genAuthOpt(@Session() session: Record<string, any>, @Body() body: LoginForm) {
+    return this.AuthService.genAuthOpt(session, body);
+  }
 
   // 验证 WebAuthn 配置项
-  //@Post('verifyRegistration')
-  //@HttpCode(200)
-  //vRegOpt(
-  //  @Session() session: Record<string, any>,
-  //  @Req() req: Request,
-  //  @Body() body: AuthenticationResponseJSON,
-  //) {
-  //  return this.AuthService.vRegOpt(session, req, body);
-  //}
+  @Post('verifyRegistration')
+  @HttpCode(200)
+  vRegOpt(
+    @Session() session: Record<string, any>,
+    @Req() req: Request,
+    @Body() body: AuthenticationResponseJSON,
+  ) {
+    return this.AuthService.vRegOpt(session, req, body);
+  }
 }

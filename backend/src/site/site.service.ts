@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { db } from 'src/services/mysql';
+import { db } from 'src/Service/mysql';
 import { SiteOptions } from './site.interface';
 @Injectable()
 export class SiteService {

@@ -1,30 +1,30 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { db } from 'src/services/mysql';
+import { db } from 'src/Service/mysql';
 import bcrypt from 'bcryptjs';
 import type { UserInfo, UpdateType, LoginIP } from './user.interface';
 import {
-//  base64ToUint8Array,
+  base64ToUint8Array,
   isEmail,
-//  uint8ArrayToBase64,
+  uint8ArrayToBase64,
   validatePassword,
   validateSearchQuery,
-} from 'src/utils';
-import { AuthService as AuthServices } from 'src/modules/auth/auth.service';
-//import {
+} from 'src/Utils';
+import { AuthService as AuthServices } from 'src/auth/auth.service';
+import {
   // Registration
-//  generateRegistrationOptions,
-//  verifyRegistrationResponse,
-//} from '@simplewebauthn/server';
-//import type {
-//  GenerateRegistrationOptionsOpts,
-//  VerifiedRegistrationResponse,
-//  VerifyRegistrationResponseOpts,
-//} from '@simplewebauthn/server';
-//import type {
-//  AuthenticatorDevice,
-//  RegistrationResponseJSON,
-//} from '@simplewebauthn/types';
-//import config from 'src/services/config';
+  generateRegistrationOptions,
+  verifyRegistrationResponse,
+} from '@simplewebauthn/server';
+import type {
+  GenerateRegistrationOptionsOpts,
+  VerifiedRegistrationResponse,
+  VerifyRegistrationResponseOpts,
+} from '@simplewebauthn/server';
+import type {
+  AuthenticatorDevice,
+  RegistrationResponseJSON,
+} from '@simplewebauthn/types';
+import config from 'src/Service/config';
 
 @Injectable()
 export class UserService {
@@ -128,7 +128,7 @@ export class UserService {
     if (r.affectedRows !== 1)
       throw new Error('发生了未知错误，请联系网站管理员');
 
-    //await this.delete_wan(session, true);
+    await this.delete_wan(session, true);
     return {
       code: HttpStatus.OK,
       msg: '更新用户名成功',
@@ -170,7 +170,7 @@ export class UserService {
       throw new Error('发生了未知错误，请联系网站管理员');
 
     session['email'] = body.email;
-    //await this.delete_wan(session, true);
+    await this.delete_wan(session, true);
     return {
       code: HttpStatus.OK,
       msg: '更新邮箱成功',
@@ -245,129 +245,141 @@ export class UserService {
     };
   }
 
-  // 生成 PassKey 配置项
-  // async genRegOpt(session: Record<string, any>) {
-  //   const { data: u } = await this.info_(session.uid);
+  // 生成 外部验证器 配置项
+  async genRegOpt(session: Record<string, any>) {
+    const { data: u } = await this.info_(session.uid);
 
-  //   let devices: AuthenticatorDevice[] = [];
-  //   if (u.authDevice) devices = JSON.parse(u.authDevice);
+    let devices: AuthenticatorDevice[] = [];
+    if (u.authDevice) devices = JSON.parse(u.authDevice);
 
-  //   const opts: GenerateRegistrationOptionsOpts = {
-  //     rpName: config.webAuthn.rpName,
-  //     rpID: config.webAuthn.rpID,
-  //     userID: String(u.id),
-  //     userName: u.username,
-  //     timeout: 100000,
-  //     attestationType: 'none',
-  //     excludeCredentials: devices.map((dev: any) => ({
-  //       id: base64ToUint8Array(dev.credentialID),
-  //       type: 'public-key',
-  //       transports: dev.transports,
-  //     })),
-  //     authenticatorSelection: {
-  //       residentKey: 'preferred',
-  //       userVerification: 'preferred',
-  //     },
-  //     supportedAlgorithmIDs: [-7, -257],
-  //   };
+    const opts: GenerateRegistrationOptionsOpts = {
+      rpName: config.webAuthn.rpName,
+      rpID: config.webAuthn.rpID,
+      userID: String(u.id),
+      userName: u.username,
+      timeout: 100000,
+      attestationType: 'none',
+      /**
+       * Passing in a user's list of already-registered authenticator IDs here prevents users from
+       * registering the same device multiple times. The authenticator will simply throw an error in
+       * the browser if it's asked to perform registration when one of these ID's already resides
+       * on it.
+       * 在这里传入用户的已注册验证器ID列表可以防止用户多次注册同一设备。
+       * 如果在其中一个ID已经存在的情况下，验证器被要求执行注册，那么它只会在浏览器中抛出一个错误。
+       */
+      excludeCredentials: devices.map((dev: any) => ({
+        id: base64ToUint8Array(dev.credentialID),
+        type: 'public-key',
+        transports: dev.transports,
+      })),
+      authenticatorSelection: {
+        residentKey: 'preferred',
+        userVerification: 'preferred',
+      },
+      /**
+       * Support the two most common algorithms: ES256, and RS256
+       */
+      supportedAlgorithmIDs: [-7, -257],
+    };
 
-  //   const options = await generateRegistrationOptions(opts);
+    const options = await generateRegistrationOptions(opts);
 
-  //   session['NyaChallenge'] = options.challenge;
+    session['NyaChallenge'] = options.challenge;
 
-  //   return {
-  //     code: HttpStatus.OK,
-  //     msg: '获取成功',
-  //     time: Date.now(),
-  //     data: options,
-  //   };
-  // }
+    return {
+      code: HttpStatus.OK,
+      msg: '获取成功',
+      time: Date.now(),
+      data: options,
+    };
+  }
 
-  // 验证PassKey
-  // async vRegOpt(session: Record<string, any>, body: RegistrationResponseJSON) {
-  //   const { data: u } = await this.info_(session.uid);
+  // 验证外部验证器
+  async vRegOpt(session: Record<string, any>, body: RegistrationResponseJSON) {
+    const { data: u } = await this.info_(session.uid);
 
-  //   let devices: AuthenticatorDevice[] = [];
-  //   if (u.authDevice) devices = JSON.parse(u.authDevice);
+    let devices: AuthenticatorDevice[] = [];
+    if (u.authDevice) devices = JSON.parse(u.authDevice);
 
-  //   let verification: VerifiedRegistrationResponse;
-  //   try {
-  //     const opts: VerifyRegistrationResponseOpts = {
-  //       response: body,
-  //       expectedChallenge: session['NyaChallenge'],
-  //       expectedOrigin: config.webAuthn.expectedOrigin,
-  //       expectedRPID: config.webAuthn.rpID,
-  //       requireUserVerification: false,
-  //     };
-  //     verification = await verifyRegistrationResponse(opts);
-  //   } catch (err: any) {
-  //     console.error(err);
-  //     throw new Error(err.message);
-  //   }
+    let verification: VerifiedRegistrationResponse;
+    try {
+      const opts: VerifyRegistrationResponseOpts = {
+        response: body,
+        expectedChallenge: session['NyaChallenge'],
+        expectedOrigin: config.webAuthn.expectedOrigin,
+        expectedRPID: config.webAuthn.rpID,
+        requireUserVerification: false,
+      };
+      verification = await verifyRegistrationResponse(opts);
+    } catch (err: any) {
+      console.error(err);
+      throw new Error(err.message);
+    }
 
-  //   const { verified, registrationInfo } = verification;
+    const { verified, registrationInfo } = verification;
 
-  //   if (verified && registrationInfo) {
-  //     const { credentialPublicKey, credentialID, counter } = registrationInfo;
+    if (verified && registrationInfo) {
+      const { credentialPublicKey, credentialID, counter } = registrationInfo;
 
-  //     // 诶嘿，魔法~
-  //     const newDevice: any = {
-  //       credentialPublicKey: uint8ArrayToBase64(credentialPublicKey),
-  //       credentialID: uint8ArrayToBase64(credentialID),
-  //       counter,
-  //       transports: body.response.transports,
-  //     };
-  //     devices.push(newDevice);
-  //     const r = await db.query('update user set authDevice=? where id=?', [
-  //       JSON.stringify(devices),
-  //       session.uid,
-  //     ]);
-  //     if (r.affectedRows !== 1) throw new Error('恭喜，你数据库没了');
-  //   }
+      // 诶嘿，魔法~
+      const newDevice: any = {
+        credentialPublicKey: uint8ArrayToBase64(credentialPublicKey),
+        credentialID: uint8ArrayToBase64(credentialID),
+        counter,
+        transports: body.response.transports,
+      };
+      devices.push(newDevice);
+      const r = await db.query('update user set authDevice=? where id=?', [
+        JSON.stringify(devices),
+        session.uid,
+      ]);
+      if (r.affectedRows !== 1) throw new Error('恭喜，你数据库没了');
+    }
 
-  //   session['NyaChallenge'] = undefined;
+    session['NyaChallenge'] = undefined;
 
-  //   return {
-  //     code: HttpStatus.OK,
-  //     msg: '验证成功',
-  //     time: Date.now(),
-  //     data: { verified },
-  //   };
-  // }
+    return {
+      code: HttpStatus.OK,
+      msg: '验证成功',
+      time: Date.now(),
+      data: { verified },
+    };
+  }
 
-  // 删除单个PassKey
-  // async delete_wan(
-  //   session: Record<string, any>,
-  //   deleteAll = false,
-  //   body?: { credentialID: string },
-  // ) {
-  //   const { data: u } = await this.info_(session.uid);
-  //   const devices: AuthenticatorDevice[] = u.authDevice
-  //     ? JSON.parse(u.authDevice)
-  //     : [];
+  // 删除单个外部验证器
+  async delete_wan(
+    session: Record<string, any>,
+    deleteAll = false,
+    body?: { credentialID: string },
+  ) {
+    const { data: u } = await this.info_(session.uid);
+    const devices: AuthenticatorDevice[] = u.authDevice
+      ? JSON.parse(u.authDevice)
+      : [];
 
-  //   if (devices.length === 0) throw new Error('未绑定任何PassKey');
+    if (devices.length === 0) throw new Error('未绑定任何外部验证器');
 
-  //   const filterDevices = devices.filter(
-  //     (a: any) => a.credentialID !== body.credentialID,
-  //   );
+    const filterDevices = devices.filter(
+      (a: any) => a.credentialID !== body.credentialID,
+    );
 
-  //   const r = await db.query('update user set authDevice=? where id=?', [
-  //     deleteAll
-  //       ? null
-  //       : filterDevices.length === 0
-  //         ? null
-  //         : JSON.stringify(filterDevices),
-  //     session.uid,
-  //   ]);
-  //   if (r.affectedRows !== 1) throw new Error('恭喜，你数据库没了');
+    const r = await db.query('update user set authDevice=? where id=?', [
+      deleteAll
+        ? null
+        : filterDevices.length === 0
+          ? null
+          : JSON.stringify(filterDevices),
+      session.uid,
+    ]);
+    if (r.affectedRows !== 1) throw new Error('恭喜，你数据库没了');
 
-  //   return {
-  //     code: HttpStatus.OK,
-  //     msg: '删除成功',
-  //     time: Date.now(),
-  //   };
-  // }
+    return {
+      code: HttpStatus.OK,
+      msg: '删除成功',
+      time: Date.now(),
+    };
+  }
+
   // 登录日志
   async loginLog(
     session: Record<string, any>,
@@ -461,13 +473,20 @@ export class UserService {
 
   // 用户名格式验证
   async validateUName(uname: string) {
-    // TODO: 判断禁止的用户名（待优化）
+    // 判断禁止的用户名（待优化）
     if (uname === 'admin')
-      throw new HttpException('禁止该用户名', HttpStatus.EXPECTATION_FAILED);
+      throw new HttpException(
+        {
+          msg: '禁止该用户名',
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      );
 
     if (!/^[a-zA-Z0-9_-]{4,16}$/.test(uname))
       throw new HttpException(
-        '用户名或密码不符合规范',
+        {
+          msg: '用户名或密码不符合规范',
+        },
         HttpStatus.EXPECTATION_FAILED,
       );
 

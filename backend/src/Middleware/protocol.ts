@@ -1,7 +1,13 @@
-import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NestMiddleware,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { db } from 'src/services/mysql';
-import config from 'src/services/config';
+import { logger } from 'src/Utils/log';
+import { db } from 'src/Service/mysql';
+import config from 'src/Service/config';
 
 // 全局跨域中间件
 export function GlobalHeaders(req: Request, res: Response, next: NextFunction) {
@@ -18,7 +24,7 @@ export function GlobalHeaders(req: Request, res: Response, next: NextFunction) {
     : config.isReverseProxy
       ? req.headers['x-real-ip']
       : req.socket.remoteAddress;
-  Logger.log(`${ip} ${req.method} ${req.url}`);
+  logger.info(`${ip} ${req.method} ${req.url}`);
   next();
 }
 
@@ -30,8 +36,13 @@ export class dbConnect implements NestMiddleware {
     try {
       conn = await db.getConnection();
     } catch (err) {
-      Logger.error('数据库连接出错：' + err.message);
-      throw new Error(':(');
+      logger.error('数据库连接出错：' + err.message);
+      throw new HttpException(
+        {
+          msg: ':(',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     } finally {
       if (conn) conn.release();
     }

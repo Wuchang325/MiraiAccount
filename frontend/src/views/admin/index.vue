@@ -47,14 +47,14 @@ const toLogout = async () => {
       <v-app-bar-nav-icon @click="toggleDrawer" aria-label="开关抽屉"></v-app-bar-nav-icon>
     </template>
     <v-app-bar-title class="app-bar-title">
-      <lazy-t>NYANCY ACCOUNT</lazy-t>
+      <Mirai-t>Mirai Account</Mirai-t>
     </v-app-bar-title>
     <v-spacer></v-spacer>
 
     <img
       title="Meow?"
       class="img-meow"
-      src="https://cdn.imlazy.ink:233/img/%E8%A1%A8%E6%83%85%E5%8C%85/%E7%8C%AB%E7%BE%BD%E9%9B%AB/015.png"
+      src="https://cdn.imMirai.ink:233/img/%E8%A1%A8%E6%83%85%E5%8C%85/%E7%8C%AB%E7%BE%BD%E9%9B%AB/015.png"
     />
   </v-app-bar>
 
@@ -87,7 +87,7 @@ const toLogout = async () => {
 .app-bar-title {
   div {
     overflow: unset !important;
-    lazy-t {
+    Mirai-t {
       text-shadow: 0 0 10px #aaa;
       transition: all 0.5s;
       &:hover {

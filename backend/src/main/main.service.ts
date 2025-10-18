@@ -1,15 +1,15 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { NyaResponse } from 'src/types';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 
 @Injectable()
 export class MainService {
-  indexGet(): Partial<NyaResponse<any>> {
+  indexGet() {
     return {
+      code: 233,
       msg: '哇哦？',
       data: [
         {
           id: 1,
-          name: 'Lazy',
+          name: 'MiraiNebula Studio',
           info: 'Author',
         },
       ],
@@ -17,18 +17,23 @@ export class MainService {
   }
   indexPost() {
     return {
+      code: 500,
       msg: '嗯哼？',
       data: [
         {
           id: 1,
-          name: 'Lazy',
+          name: 'MiraiNebula Studio',
           info: 'Author',
         },
       ],
     };
   }
   indexAll() {
-    throw new HttpException('fuck', HttpStatus.METHOD_NOT_ALLOWED);
-    // throw new Error('fuck');
+    throw new HttpException(
+      {
+        msg: 'EMMMMMM....................',
+      },
+      HttpStatus.METHOD_NOT_ALLOWED,
+    );
   }
 }

@@ -1,9 +1,9 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
-import { db } from 'src/services/mysql';
+import { db } from 'src/Service/mysql';
 import bcrypt from 'bcryptjs';
 import type { LoginIP, UserInfo } from './user.interface';
 import { UserService } from './user.service';
-import { validateSearchQuery } from 'src/utils';
+import { validateSearchQuery } from 'src/Utils';
 
 @Injectable()
 export class UserAdminService extends UserService {

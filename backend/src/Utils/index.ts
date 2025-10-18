@@ -2,7 +2,6 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import fs from 'fs-extra';
 import Handlebars from 'handlebars';
 import mjml2html from 'mjml';
-import { EMAIL_REG, PWD_REG } from 'src/modules/auth/auth.dto';
 
 export const randomString = (length: number) => {
   const lowerCaseChars = 'abcdefghijklmnopqrstuvwxyz';
@@ -57,17 +56,24 @@ export async function isSafeData(body: { [propName: string]: any }) {
 
 // 校验邮箱格式
 export const isEmail = (email: string) => {
-  if (!EMAIL_REG.test(email))
+  if (!/^([a-zA-Z0-9_.+-])+@(([a-zA-Z0-9-])+\.)+([a-zA-Z]{2,6})$/.test(email))
     throw new HttpException(
-      '请输入正确的邮箱地址！',
+      {
+        msg: '请输入正确的邮箱地址！',
+      },
       HttpStatus.EXPECTATION_FAILED,
     );
   return true;
 };
 
 export const validatePassword = (passwd: string) => {
-  if (!PWD_REG.test(passwd))
-    throw new HttpException('密码格式不正确', HttpStatus.EXPECTATION_FAILED);
+  if (!/^[a-zA-Z0-9!@#$%^&*()_+\-=[\]{}|\\:;"'<>,.?/~`]{6,20}$/.test(passwd))
+    throw new HttpException(
+      {
+        msg: '密码格式不正确',
+      },
+      HttpStatus.EXPECTATION_FAILED,
+    );
   return true;
 };
 
@@ -110,7 +116,12 @@ export const validateSearchQuery = (_page: string, _pageSize: string) => {
     Number(_pageSize) < -2 ||
     Number(_pageSize) === 0
   )
-    throw new HttpException('参数有误', HttpStatus.EXPECTATION_FAILED);
+    throw new HttpException(
+      {
+        msg: '参数有误',
+      },
+      HttpStatus.EXPECTATION_FAILED,
+    );
 
   return {
     page: Number(_page),

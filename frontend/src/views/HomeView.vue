@@ -26,7 +26,7 @@ const { xs } = useDisplay()
         </v-card-title>
         <v-card-text>
           <div class="mt-4">
-            <p class="my-5">一个提供基于 OAuth2.0 标准协议的账号快捷登录服务平台</p>
+            <p class="my-5">MiraiNebula Studio 旗下统一验证登录平台</p>
             <v-btn
               v-if="isLogin"
               prepend-icon="mdi-cat"
@@ -47,7 +47,7 @@ const { xs } = useDisplay()
             >
           </div>
         </v-card-text>
-        <v-card-actions class="d-flex justify-center">
+        <!--<v-card-actions class="d-flex justify-center">
           <v-btn
             prepend-icon="mdi-github"
             href="https://github.com/Nyancy-Org/NyancyAccount"
@@ -68,7 +68,7 @@ const { xs } = useDisplay()
             target="_blank"
             >问题反馈</v-btn
           >
-        </v-card-actions>
+        </v-card-actions>-->
       </v-card>
     </v-col>
   </v-row>

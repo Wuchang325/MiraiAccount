@@ -8,13 +8,13 @@ import {
 import { APP_GUARD } from '@nestjs/core';
 // 接口速率限制
 import { RateLimiterModule, RateLimiterGuard } from 'nestjs-rate-limiter';
-import { dbConnect } from './middlewares/protocol';
+import { dbConnect } from './Middleware/protocol';
 
-import { MainModule } from './modules/main/main.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { UserModule } from './modules/user/user.module';
-import { Oauth2Module } from './modules/oauth2/oauth2.module';
-import { SiteModule } from './modules/site/site.module';
+import { MainModule } from './main/main.module';
+import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
+import { Oauth2Module } from './oauth2/oauth2.module';
+import { SiteModule } from './site/site.module';
 
 @Module({
   imports: [
@@ -42,9 +42,11 @@ import { SiteModule } from './modules/site/site.module';
       logger: true,
       customResponseSchema: (req) => {
         throw new HttpException(
-          `你的操作太快了，请等待${Math.round(
-            req.msBeforeNext / 1000,
-          )}秒后重试`,
+          {
+            msg: `你的操作太快了，请等待${Math.round(
+              req.msBeforeNext / 1000,
+            )}秒后重试`,
+          },
           HttpStatus.TOO_MANY_REQUESTS,
         );
       },
