@@ -89,8 +89,6 @@ CREATE TABLE `user` (
   `role` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `email` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `regTime` varchar(60) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `lastLoginTime` varchar(60) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `lastLoginIp` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `apikey` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `verifyToken` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `authDevice` text COLLATE utf8mb4_general_ci,

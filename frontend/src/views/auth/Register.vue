@@ -234,6 +234,13 @@ onUnmounted(() => emit('reset'))
       </div>
     </v-slide-x-transition>
 
+        <div class="mt-1 mb-3 text-body-2 text--secondary">
+      已有账户？
+      <router-link to="/auth/login" class="text-primary text-decoration-none">
+        去登录吧！
+      </router-link>
+    </div>
+
     <v-btn
       v-if="step === 1"
       size="large"
