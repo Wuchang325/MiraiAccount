@@ -1,0 +1,1 @@
+import{b3 as a}from"./index-BL5voM2d.js";const s="/site",i=async()=>{const{data:t}=await a.get(s+"/statistic?t_="+Date.now());return t},e=async()=>{const{data:t}=await a.get(s+"/options?t_="+Date.now());return t},c=async t=>{const{data:n}=await a.put(s+"/options?t_="+Date.now(),t);return n};export{e as a,i as g,c as u};
