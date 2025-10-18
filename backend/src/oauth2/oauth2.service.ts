@@ -376,6 +376,14 @@ export class Oauth2Service {
 
   // 新建一个oauth2应用
   async createClient(session: Record<string, any>, body: NewOauthClient) {
+    const [user]: UserInfo[] = await db.query(
+      'select role from user where id=?',
+      [session['uid']],
+    );
+    if (user.role !== 'admin') {
+      // 仅允许admin创建
+      throw new HttpException('暂时不允许创建OAuth2应用', HttpStatus.FORBIDDEN);
+    }
     // 检查表单是否为空
     if (!body.name)
       throw new HttpException(

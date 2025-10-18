@@ -121,52 +121,65 @@ export class AuthService {
 
   // 注册
   async register(session: Record<string, any>, body: RegForm) {
-    // 检查是否允许注册
+    // 1. 检查是否允许注册
     await this.allowReg();
 
-    // 检查传进来的数据是否合法
-    const a = await this.regValidateData(body);
-    if (!a) {
+    // 2. 检查传进来的数据是否合法（用户名/密码格式）
+    const isDataValid = await this.regValidateData(body);
+    if (!isDataValid) {
       throw new HttpException(
-        {
-          msg: '用户名或密码不符合规范',
-        },
+        { msg: '用户名或密码不符合规范' },
         HttpStatus.EXPECTATION_FAILED,
       );
     }
 
-    // 验证邮箱是否被占用
+    // 3. 验证邮箱/用户名是否已被占用
     await this.checkEmail({ email: body.email });
-
-    // 验证用户名否被占用
     await this.checkUserName({ username: body.username });
 
-    // 验证验证码
+    // 4. 验证注册验证码
     await this.verifyEmailCode(session, body.email, body.code, 'reg');
 
-    // 开始注册
-    // 插入新用户
-    let i;
+    // 5. 关键修改：查询当前用户总数，判断是否为第一个注册用户
+    let isFirstUser = false;
     try {
-      i = await db.query(
+      // 查询用户表总记录数
+      const [userCountResult] = await db.query(
+        'SELECT COUNT(*) AS count FROM user',
+      );
+      // 不同数据库驱动返回格式可能有差异，此处兼容常见格式（取第一个结果的count值）
+      const totalUser = Number(
+        userCountResult?.count || userCountResult[0]?.count || 0,
+      );
+      isFirstUser = totalUser === 0; // 总用户数为0 → 第一个用户
+    } catch (err) {
+      logger.error('查询用户总数失败：', err.message);
+      throw new Error('注册流程异常，请联系网站管理员');
+    }
+
+    // 6. 插入新用户（根据是否为第一个用户动态设置角色）
+    let insertResult; // 优化变量名：原i → insertResult，更具语义
+    const userRole = isFirstUser ? 'admin' : 'default'; // 第一个用户设为admin，其余为default
+    try {
+      insertResult = await db.query(
         'insert into user (username,password,email,status,role,regTime) values (?,?,?,?,?,?)',
         [
           body.username,
-          bcrypt.hashSync(body.password, 10),
+          bcrypt.hashSync(body.password, 10), // 密码加密存储
           body.email,
-          0,
-          'default',
-          Date.now(),
+          0, // status字段默认值（按原有逻辑保留）
+          userRole, // 动态角色
+          Date.now(), // 注册时间戳
         ],
       );
     } catch (err) {
-      logger.error(err.message);
+      logger.error('插入新用户失败：', err.message);
       throw new Error('注册失败，请联系网站管理员');
     }
 
-    if (i.affectedRows === 1) {
-      // 写入统计数据
-      const formattedDate = new Date().toISOString().split('T')[0];
+    // 7. 验证插入结果，成功则写入每日统计
+    if (insertResult.affectedRows === 1) {
+      const formattedDate = new Date().toISOString().split('T')[0]; // 格式：YYYY-MM-DD
       await db.query(
         'INSERT INTO daily_statistics (date, count) VALUES (?, 1) ON DUPLICATE KEY UPDATE count = count + 1',
         [formattedDate],
@@ -174,7 +187,9 @@ export class AuthService {
 
       return {
         code: HttpStatus.OK,
-        msg: '好耶，你注册成功了~',
+        msg: isFirstUser
+          ? '好耶！你是第一个注册用户，已自动获得管理员权限~'
+          : '好耶，你注册成功了~', // 给管理员用户特殊提示
         time: Date.now(),
       };
     } else {

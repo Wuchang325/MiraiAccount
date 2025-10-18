@@ -3,14 +3,14 @@ import { db } from 'src/Service/mysql';
 import bcrypt from 'bcryptjs';
 import type { UserInfo, UpdateType, LoginIP } from './user.interface';
 import {
-  base64ToUint8Array,
+//  base64ToUint8Array,
   isEmail,
-  uint8ArrayToBase64,
+//  uint8ArrayToBase64,
   validatePassword,
   validateSearchQuery,
 } from 'src/Utils';
 import { AuthService as AuthServices } from 'src/auth/auth.service';
-import {
+/*import {
   // Registration
   generateRegistrationOptions,
   verifyRegistrationResponse,
@@ -25,7 +25,7 @@ import type {
   RegistrationResponseJSON,
 } from '@simplewebauthn/types';
 import config from 'src/Service/config';
-
+*/
 @Injectable()
 export class UserService {
   constructor(readonly AuthService: AuthServices) {}
@@ -47,11 +47,11 @@ export class UserService {
     // 删除敏感信息
     delete r.password;
     delete r.verifyToken;
-    r.authDevice
+    /*r.authDevice
       ? (r.authDevice = JSON.parse(r.authDevice).map((obj: any) => ({
           credentialID: obj.credentialID,
         })))
-      : (r.authDevice = null);
+      : (r.authDevice = null);*/
 
     // 然后再返回
     return {
@@ -128,7 +128,7 @@ export class UserService {
     if (r.affectedRows !== 1)
       throw new Error('发生了未知错误，请联系网站管理员');
 
-    await this.delete_wan(session, true);
+    //await this.delete_wan(session, true);
     return {
       code: HttpStatus.OK,
       msg: '更新用户名成功',
@@ -170,7 +170,7 @@ export class UserService {
       throw new Error('发生了未知错误，请联系网站管理员');
 
     session['email'] = body.email;
-    await this.delete_wan(session, true);
+    //await this.delete_wan(session, true);
     return {
       code: HttpStatus.OK,
       msg: '更新邮箱成功',
@@ -246,7 +246,7 @@ export class UserService {
   }
 
   // 生成 外部验证器 配置项
-  async genRegOpt(session: Record<string, any>) {
+  /*async genRegOpt(session: Record<string, any>) {
     const { data: u } = await this.info_(session.uid);
 
     let devices: AuthenticatorDevice[] = [];
@@ -259,14 +259,14 @@ export class UserService {
       userName: u.username,
       timeout: 100000,
       attestationType: 'none',
-      /**
+      *
        * Passing in a user's list of already-registered authenticator IDs here prevents users from
        * registering the same device multiple times. The authenticator will simply throw an error in
        * the browser if it's asked to perform registration when one of these ID's already resides
        * on it.
        * 在这里传入用户的已注册验证器ID列表可以防止用户多次注册同一设备。
        * 如果在其中一个ID已经存在的情况下，验证器被要求执行注册，那么它只会在浏览器中抛出一个错误。
-       */
+       
       excludeCredentials: devices.map((dev: any) => ({
         id: base64ToUint8Array(dev.credentialID),
         type: 'public-key',
@@ -278,7 +278,7 @@ export class UserService {
       },
       /**
        * Support the two most common algorithms: ES256, and RS256
-       */
+       
       supportedAlgorithmIDs: [-7, -257],
     };
 
@@ -292,10 +292,10 @@ export class UserService {
       time: Date.now(),
       data: options,
     };
-  }
+  }*/
 
   // 验证外部验证器
-  async vRegOpt(session: Record<string, any>, body: RegistrationResponseJSON) {
+  /*async vRegOpt(session: Record<string, any>, body: RegistrationResponseJSON) {
     const { data: u } = await this.info_(session.uid);
 
     let devices: AuthenticatorDevice[] = [];
@@ -344,10 +344,10 @@ export class UserService {
       time: Date.now(),
       data: { verified },
     };
-  }
+  }*/
 
   // 删除单个外部验证器
-  async delete_wan(
+  /*async delete_wan(
     session: Record<string, any>,
     deleteAll = false,
     body?: { credentialID: string },
@@ -378,7 +378,7 @@ export class UserService {
       msg: '删除成功',
       time: Date.now(),
     };
-  }
+  }*/
 
   // 登录日志
   async loginLog(
